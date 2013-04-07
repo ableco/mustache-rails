@@ -32,7 +32,28 @@ module ActionView
           set_cache_key = "merge({:template_cache_key => \"#{digest}\"})"
 
           <<-RUBY
-            ctx = mustache_view.context; begin; ctx.push(local_assigns.#{set_cache_key}); #{src}; ensure; ctx.pop; end
+            view_function = lambda do
+              ctx = mustache_view.context
+              begin
+                ctx.push(local_assigns.#{set_cache_key})
+                #{src}
+              ensure
+                ctx.pop
+              end
+            end
+
+            @output_buffer = ActionView::OutputBuffer.new
+
+            if mustache_view_class == mustache_view.class && key = mustache_view.cache_key
+              options = { expires_in: mustache_view.cache_duration }
+              cache([#{digest.inspect}, key], options) do
+                view_function.call
+              end
+            else
+              view_function.call
+            end
+
+            @output_buffer
           RUBY
         end
       end

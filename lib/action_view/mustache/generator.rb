@@ -19,9 +19,7 @@ module ActionView
       # Returns String of compiled Ruby code.
       def compile(exp)
         src = ""
-        src << "@output_buffer = output_buffer || ActionView::OutputBuffer.new; "
         src << compile!(exp)
-        src << "@output_buffer.to_s;"
         src
       end
 
