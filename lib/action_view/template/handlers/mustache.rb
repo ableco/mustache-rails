@@ -46,7 +46,7 @@ module ActionView
 
             if mustache_view_class == mustache_view.class && key = mustache_view.cache_key
               options = { expires_in: mustache_view.cache_duration }
-              cache(key, options) do
+              cache([mustache_view.template_name, mustache_view.version, key].flatten, options) do
                 view_function.call
               end
             else
