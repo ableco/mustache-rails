@@ -73,5 +73,63 @@ module ActionView
     def respond_to?(method, include_private = false)
       super || @_view.respond_to?(method, include_private)
     end
+
+
+    ##
+    # Caching
+
+    def cache_key
+      nil
+    end
+
+    def cache_duration
+      nil
+    end
+
+    def setup!
+      nil
+    end
+    
+
+    class << self
+
+      def dependencies
+        # The base class doesn't have any dependencies.
+        return Set.new if self == ActionView::Mustache
+
+        @dependencies ||= Set.new
+        @dependencies.union(superclass.dependencies)
+      end
+
+      def depends_on(*dependencies)
+        @dependencies ||= Set.new
+        @dependencies.merge(dependencies)
+      end
+
+      def version(version = nil)
+        @version = version if version.present?
+        @version || 0
+      end
+
+      def cache_key
+        @cache_key ||= compute_cache_key
+      end
+
+      
+      private
+
+      def compute_cache_key
+        dependency_cache_keys = dependencies.map do |path|
+          if view_class = ActionView::Base.mustache_view_class_for_path(path)
+            view_class.new.cache_key
+          else
+            path
+          end
+        end
+
+        [name, version, dependency_cache_keys].flatten.join('/')
+      end
+
+    end
   end
 end

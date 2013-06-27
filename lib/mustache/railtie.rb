@@ -1,5 +1,6 @@
 require 'mustache'
 require 'rails/railtie'
+require 'mustache/dependency_tracker'
 
 class Mustache
   # Railtie initializer for Rails 3.x and higher.
@@ -83,6 +84,15 @@ class Mustache
         # local app configuration.
         ActionView::Base.mustache_view_namespace = app.config.mustache.view_namespace
         ActionView::Base.mustache_default_view_class = app.config.mustache.default_view_class
+      end
+    end
+
+    # Cache Digests
+    config.app_generators.template_engine :mustache
+
+    initializer 'mustache.initialize_template_handler' do
+      if defined?(CacheDigests::DependencyTracker)
+        CacheDigests::DependencyTracker.register_tracker :mustache, Mustache::DependencyTracker
       end
     end
   end

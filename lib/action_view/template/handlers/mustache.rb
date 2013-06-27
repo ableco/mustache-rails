@@ -46,7 +46,7 @@ module ActionView
 
             if mustache_view_class == mustache_view.class && key = mustache_view.cache_key
               options = { expires_in: mustache_view.cache_duration }
-              cache([#{digest.inspect}, key], options) do
+              cache(key, options) do
                 view_function.call
               end
             else
