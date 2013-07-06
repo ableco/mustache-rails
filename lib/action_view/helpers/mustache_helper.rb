@@ -49,10 +49,10 @@ module ActionView
       #
       # Returns Class or raises a TypeError.
       def mustache_view_class
-        if @virtual_path
+        if @virtual_path && @virtual_path.match(/_[^_\/]+$/).nil?
           begin
             klass = "#{mustache_view_namespace}/#{@virtual_path}"
-            load_mustache_view_class_name(klass)
+           load_mustache_view_class_name(klass)
           rescue NameError => e
             if klass = mustache_default_view_class
               load_mustache_view_class_name(klass)
