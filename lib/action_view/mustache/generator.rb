@@ -18,6 +18,7 @@ module ActionView
       #
       # Returns String of compiled Ruby code.
       def compile(exp)
+        @line_number = 1
         src = ""
         src << compile!(exp)
         src
@@ -47,8 +48,8 @@ module ActionView
       # content - Array of section content tokens
       #
       # Returns String.
-      def on_section(name, content, raw, delims)
-        "v = #{compile!(name)}; ctx._eval_section(self, @output_buffer, v) {\n#{compile!(content)}\n}; "
+      def on_section(name, content, raw, delims, offset)
+        "v = #{compile!(name)}; ctx._eval_section(@output_buffer, v) { #{compile!(content)} }; "
       end
 
       # Internal: Compile inverted section.
@@ -57,8 +58,8 @@ module ActionView
       # content - Array of section content tokens
       #
       # Returns String.
-      def on_inverted_section(name, content, raw, delims)
-        "v = #{compile!(name)}; ctx._eval_inverted_section(@output_buffer, v) {\n#{compile!(content)}\n}; "
+      def on_inverted_section(name, content, raw, delims, offset)
+        "v = #{compile!(name)}; ctx._eval_inverted_section(@output_buffer, v) { #{compile!(content)} }; "
       end
 
       # Internal: Compile partial render call.
@@ -67,8 +68,8 @@ module ActionView
       # indentation - String of indentation level
       #
       # Returns String.
-      def on_partial(name, indentation)
-        "@output_buffer.concat(render(:partial => #{name.inspect}));\n"
+      def on_partial(name, indentation, offset)
+        "@output_buffer.concat(render(:partial => #{name.inspect}));"
       end
 
       # Internal: Compile unescaped tag.
@@ -76,8 +77,8 @@ module ActionView
       # name - String name of tag
       #
       # Returns String.
-      def on_utag(name)
-        "v = #{compile!(name)}; ctx._eval_utag(@output_buffer, v); "
+      def on_utag(name, offset)
+        "#{newlines(offset[0])}v = #{compile!(name)}; ctx._eval_utag(@output_buffer, v); "
       end
 
       # Internal: Compile escaped tag.
@@ -85,8 +86,8 @@ module ActionView
       # name - String name of tag
       #
       # Returns String.
-      def on_etag(name)
-        "v = #{compile!(name)}; ctx._eval_etag(@output_buffer, v); "
+      def on_etag(name, offset)
+        "#{newlines(offset[0])}v = #{compile!(name)}; ctx._eval_etag(@output_buffer, v); "
       end
 
       # Internal: Compile fetch lookup.
@@ -94,7 +95,7 @@ module ActionView
       # names - Array of names to fetch.
       #
       # Returns String.
-      def on_fetch(names)
+      def on_fetch(names, offset)
         names = names.map { |n| n.to_sym }
 
         if names.length == 0
@@ -113,8 +114,17 @@ module ActionView
       #
       # Returns String.
       def text(text)
-        text = text.gsub(/['\\]/, '\\\\\&')
-        "@output_buffer.safe_concat('#{text}'); "
+        # text = text.gsub(/['\\]/, '\\\\\&')
+        "@output_buffer.safe_concat(#{text.inspect}); "
+      end
+
+      def newlines(lineno)
+        s = ""
+        until lineno == @line_number
+          s += "\n"
+          @line_number += 1
+        end
+        s
       end
     end
   end
